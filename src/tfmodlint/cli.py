@@ -21,6 +21,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--strict", action="store_true", help="exit 1 on warnings too, not only on errors"
     )
+    parser.add_argument(
+        "--disable",
+        metavar="RULE",
+        action="append",
+        default=[],
+        choices=RULES,
+        help="skip a rule (repeatable)",
+    )
     parser.add_argument("--list-rules", action="store_true", help="print the rules and exit")
     parser.add_argument("--version", action="version", version=f"tfmodlint {__version__}")
     return parser
@@ -42,7 +50,7 @@ def main(argv: list[str] | None = None) -> int:
             module = load_module(path)
             if not module.sources:
                 raise ParseError(f"{raw}: no .tf files")
-            findings += lint(module)
+            findings += lint(module, frozenset(args.disable))
     except (OSError, ParseError) as exc:
         print(f"tfmodlint: {exc}", file=sys.stderr)
         return EXIT_ERROR

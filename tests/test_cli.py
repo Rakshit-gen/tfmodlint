@@ -63,3 +63,17 @@ def test_list_rules(capsys):
         "description",
     ]
     assert any(line.startswith("module-ref ") and " error " in line for line in lines)
+
+
+def test_disable_skips_rules(capsys):
+    args = [MESSY, "--disable", "module-version", "--disable", "naming"]
+    main(args)
+    out = capsys.readouterr().out
+    assert "[module-version]" not in out and "[naming]" not in out
+    assert "[required-version]" in out
+
+
+def test_disable_rejects_unknown_rule(capsys):
+    with pytest.raises(SystemExit):
+        main([MESSY, "--disable", "nope"])
+    assert "invalid choice: 'nope'" in capsys.readouterr().err
