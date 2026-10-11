@@ -68,6 +68,18 @@ def output_description(module: Module) -> Iterator[Hit]:
             yield at(block, f'output "{block.name}" has no description')
 
 
+@rule("required-version", ERROR, "no terraform block sets required_version")
+def required_version(module: Module) -> Iterator[Hit]:
+    settings = module.of("terraform")
+    if any("required_version" in b.body for b in settings) or not module.sources:
+        return
+    message = "no terraform block sets required_version"
+    if settings:
+        yield at(settings[0], message)
+    else:
+        yield min(module.sources), 1, message
+
+
 def lint(module: Module, disabled: frozenset[str] = frozenset()) -> list[Finding]:
     findings = [
         Finding(name, info.level, file, line, message)

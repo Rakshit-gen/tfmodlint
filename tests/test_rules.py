@@ -46,9 +46,27 @@ def test_disabled_rules_are_skipped():
 
 def test_variable_without_type():
     m = module(variables_tf='variable "a" {\n  description = "A."\n  default = 1\n}\n')
-    assert hits(m) == [("variable-type", 1, 'variable "a" has no type')]
+    assert hits(m, "variable-type") == [("variable-type", 1, 'variable "a" has no type')]
 
 
 def test_output_without_description():
     m = module(outputs_tf='output "id" {\n  value = 1\n}\n')
-    assert hits(m) == [("output-description", 1, 'output "id" has no description')]
+    assert hits(m, "output-description") == [
+        ("output-description", 1, 'output "id" has no description')
+    ]
+
+
+def test_missing_required_version_points_at_terraform_block():
+    m = module(
+        main_tf="locals {}\n",
+        versions_tf='\nterraform {\n  backend "s3" {}\n}\n',
+    )
+    assert hits(m, "required-version") == [
+        ("required-version", 2, "no terraform block sets required_version")
+    ]
+
+
+def test_missing_required_version_without_terraform_block():
+    m = module(variables_tf="", main_tf="locals {}\n")
+    (finding,) = [f for f in lint(m) if f.rule == "required-version"]
+    assert (finding.file, finding.line) == (Path("main.tf"), 1)
