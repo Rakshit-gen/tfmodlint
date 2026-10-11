@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -47,6 +48,23 @@ def at(block: Block, message: str) -> Hit:
     return block.file, block.line, message
 
 
+def line_in(module: Module, block: Block, pattern: str) -> int:
+    """Line of the first match of pattern at or after the start of block."""
+    lines = module.sources.get(block.file, "").splitlines()
+    regex = re.compile(pattern)
+    for number in range(block.line, len(lines) + 1):
+        if regex.search(lines[number - 1]):
+            return number
+    return block.line
+
+
+def required_providers(module: Module) -> Iterator[tuple[Block, str, object]]:
+    for block in module.of("terraform"):
+        for entry in block.body.get("required_providers", []):
+            for name, spec in entry.items():
+                yield block, name, spec
+
+
 @rule("variable-description", WARNING, "a variable has no description")
 def variable_description(module: Module) -> Iterator[Hit]:
     for block in module.of("variable"):
@@ -78,6 +96,14 @@ def required_version(module: Module) -> Iterator[Hit]:
         yield at(settings[0], message)
     else:
         yield min(module.sources), 1, message
+
+
+@rule("provider-version", ERROR, "a required provider has no version constraint")
+def provider_version(module: Module) -> Iterator[Hit]:
+    for block, name, spec in required_providers(module):
+        if isinstance(spec, dict) and not spec.get("version"):
+            line = line_in(module, block, rf"^\s*{re.escape(name)}\s*=")
+            yield block.file, line, f'provider "{name}" has no version constraint'
 
 
 def lint(module: Module, disabled: frozenset[str] = frozenset()) -> list[Finding]:

@@ -70,3 +70,24 @@ def test_missing_required_version_without_terraform_block():
     m = module(variables_tf="", main_tf="locals {}\n")
     (finding,) = [f for f in lint(m) if f.rule == "required-version"]
     assert (finding.file, finding.line) == (Path("main.tf"), 1)
+
+
+VERSIONS = """terraform {
+  required_version = ">= 1.5"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    random = {
+      source = "hashicorp/random"
+    }
+  }
+}
+"""
+
+
+def test_provider_without_version():
+    assert hits(module(versions_tf=VERSIONS), "provider-version") == [
+        ("provider-version", 8, 'provider "random" has no version constraint')
+    ]
