@@ -2,10 +2,36 @@
 
 Lint Terraform modules for the problems that make them hard to reuse.
 
+## Install
+
+Needs Python 3.11 or newer.
+
+```
+pip install git+https://github.com/Rakshit-gen/tfmodlint
+```
+
 ## Quickstart
 
 ```
 tfmodlint path/to/module
+tfmodlint --recursive modules/
+```
+
+Output for `tests/fixtures/messy`:
+
+```
+main.tf:1: error: no terraform block sets required_version [required-version]
+main.tf:3: error: provider "aws" has no version constraint [provider-version]
+main.tf:9: warning: variable "region" belongs in variables.tf [file-layout]
+main.tf:9: warning: variable "region" is never used [unused-variable]
+main.tf:9: warning: variable "region" has no description [variable-description]
+main.tf:9: warning: variable "region" has no type [variable-type]
+main.tf:11: error: module "vpc" from the registry has no version [module-version]
+main.tf:15: warning: resource name "Logs" should be lower snake_case [naming]
+main.tf:16: warning: use var.bucket instead of "${var.bucket}" [interpolation-only]
+main.tf:16: error: var.bucket is used but not declared [undeclared-variable]
+
+4 errors, 6 warnings.
 ```
 
 ## Measured vs Claimed
