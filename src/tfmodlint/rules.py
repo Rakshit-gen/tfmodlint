@@ -196,6 +196,13 @@ def secret_default(module: Module) -> Iterator[Hit]:
             yield at(block, f'variable "{block.name}" looks like a secret but has a default')
 
 
+@rule("sensitive-variable", WARNING, "a variable that looks like a secret is not marked sensitive")
+def sensitive_variable(module: Module) -> Iterator[Hit]:
+    for block in secret_variables(module):
+        if block.body.get("sensitive") is not True:
+            yield at(block, f'variable "{block.name}" looks like a secret, set sensitive = true')
+
+
 def lint(module: Module, disabled: frozenset[str] = frozenset()) -> list[Finding]:
     findings = [
         Finding(name, info.level, file, line, message)

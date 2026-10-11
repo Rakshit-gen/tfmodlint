@@ -169,3 +169,19 @@ def test_secret_with_default():
     assert hits(m, "secret-default") == [
         ("secret-default", 1, 'variable "db_password" looks like a secret but has a default')
     ]
+
+
+def test_secret_not_marked_sensitive():
+    m = module(
+        variables_tf=(
+            'variable "db_password" {\n  type = string\n}\n\n'
+            'variable "api_token" {\n  sensitive = true\n}\n'
+        )
+    )
+    assert hits(m, "sensitive-variable") == [
+        (
+            "sensitive-variable",
+            1,
+            'variable "db_password" looks like a secret, set sensitive = true',
+        )
+    ]
