@@ -203,6 +203,20 @@ def sensitive_variable(module: Module) -> Iterator[Hit]:
             yield at(block, f'variable "{block.name}" looks like a secret, set sensitive = true')
 
 
+INTERPOLATION_ONLY = re.compile(r'=\s*"\$\{([^{}"]+)\}"\s*(?:#.*|//.*)?$')
+
+
+@rule("interpolation-only", WARNING, 'an expression is wrapped in "${...}" for no reason')
+def interpolation_only(module: Module) -> Iterator[Hit]:
+    # Line regex over raw text, so a match inside a heredoc is reported too.
+    for file, text in module.sources.items():
+        for number, line in enumerate(text.splitlines(), 1):
+            match = INTERPOLATION_ONLY.search(line)
+            if match:
+                expr = match.group(1).strip()
+                yield file, number, f'use {expr} instead of "${{{expr}}}"'
+
+
 def lint(module: Module, disabled: frozenset[str] = frozenset()) -> list[Finding]:
     findings = [
         Finding(name, info.level, file, line, message)

@@ -185,3 +185,20 @@ def test_secret_not_marked_sensitive():
             'variable "db_password" looks like a secret, set sensitive = true',
         )
     ]
+
+
+def test_interpolation_only():
+    m = module(
+        main_tf=(
+            "locals {\n"
+            '  a = "${var.name}"\n'
+            '  b = "${var.name}-suffix"\n'
+            "  c = var.name\n"
+            '  d = "${local.x}" # old style\n'
+            "}\n"
+        )
+    )
+    assert hits(m, "interpolation-only") == [
+        ("interpolation-only", 2, 'use var.name instead of "${var.name}"'),
+        ("interpolation-only", 5, 'use local.x instead of "${local.x}"'),
+    ]
