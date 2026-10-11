@@ -234,6 +234,17 @@ def naming(module: Module) -> Iterator[Hit]:
                     yield block.file, line, f'local name "{name}" should be lower snake_case'
 
 
+HOME_FILES = {"variable": "variables.tf", "output": "outputs.tf"}
+
+
+@rule("file-layout", WARNING, "a variable or output is outside variables.tf or outputs.tf")
+def file_layout(module: Module) -> Iterator[Hit]:
+    for block in module.blocks:
+        home = HOME_FILES.get(block.kind)
+        if home and block.file.name != home:
+            yield at(block, f'{block.kind} "{block.name}" belongs in {home}')
+
+
 def lint(module: Module, disabled: frozenset[str] = frozenset()) -> list[Finding]:
     findings = [
         Finding(name, info.level, file, line, message)

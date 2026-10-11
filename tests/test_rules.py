@@ -218,3 +218,15 @@ def test_names_must_be_snake_case():
         ("naming", 2, 'variable name "instance-count" should be lower snake_case'),
         ("naming", 5, 'local name "okName" should be lower snake_case'),
     ]
+
+
+def test_blocks_outside_their_standard_file():
+    m = module(
+        main_tf='variable "a" {}\n\noutput "b" {}\n',
+        variables_tf='variable "c" {}\n',
+        outputs_tf='output "d" {}\n',
+    )
+    assert hits(m, "file-layout") == [
+        ("file-layout", 1, 'variable "a" belongs in variables.tf'),
+        ("file-layout", 3, 'output "b" belongs in outputs.tf'),
+    ]
