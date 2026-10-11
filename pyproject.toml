@@ -9,13 +9,17 @@ description = "Lint Terraform modules for the problems that make them hard to re
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "python-hcl2>=8,<9",
+]
 
 [project.scripts]
 tfmodlint = "tfmodlint.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = [
+    "pytest>=8",
+]
 
 [tool.ruff]
 line-length = 100
