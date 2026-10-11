@@ -230,3 +230,10 @@ def test_blocks_outside_their_standard_file():
         ("file-layout", 1, 'variable "a" belongs in variables.tf'),
         ("file-layout", 3, 'output "b" belongs in outputs.tf'),
     ]
+
+
+def test_provider_configured_in_module():
+    m = module(main_tf='provider "aws" {\n  region = "us-east-1"\n}\n\nprovider "random" {}\n')
+    assert hits(m, "provider-config") == [
+        ("provider-config", 1, 'provider "aws" is configured here, pass it in from the caller')
+    ]

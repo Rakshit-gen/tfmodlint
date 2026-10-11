@@ -245,6 +245,16 @@ def file_layout(module: Module) -> Iterator[Hit]:
             yield at(block, f'{block.kind} "{block.name}" belongs in {home}')
 
 
+@rule("provider-config", WARNING, "a reusable module configures a provider itself")
+def provider_config(module: Module) -> Iterator[Hit]:
+    for block in module.of("provider"):
+        # An empty block only declares the provider; settings belong to the caller.
+        if block.body:
+            yield at(
+                block, f'provider "{block.name}" is configured here, pass it in from the caller'
+            )
+
+
 def lint(module: Module, disabled: frozenset[str] = frozenset()) -> list[Finding]:
     findings = [
         Finding(name, info.level, file, line, message)
