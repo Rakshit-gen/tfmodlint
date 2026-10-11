@@ -103,3 +103,21 @@ def test_provider_in_old_string_form_has_no_source():
 def test_old_string_form_counts_as_a_version():
     text = 'terraform {\n  required_providers {\n    aws = "~> 5.0"\n  }\n}\n'
     assert hits(module(versions_tf=text), "provider-version") == []
+
+
+def test_git_module_without_ref():
+    text = (
+        'module "vpc" {\n  source = "git::https://example.com/vpc.git"\n}\n\n'
+        'module "dns" {\n  source = "github.com/org/dns?ref=main"\n}\n\n'
+        'module "ok" {\n  source = "git::ssh://git@example.com/ok.git?ref=v1.2.0"\n}\n\n'
+        'module "local" {\n  source = "./modules/local"\n}\n'
+    )
+    assert hits(module(main_tf=text), "module-ref") == [
+        ("module-ref", 1, 'module "vpc" source has no ?ref=, pin a tag or commit'),
+        ("module-ref", 5, 'module "dns" is pinned to branch "main", use a tag or commit'),
+    ]
+
+
+def test_ref_inside_a_subdirectory_source():
+    text = 'module "x" {\n  source = "git::https://e.com/m.git//sub?depth=1&ref=abc123"\n}\n'
+    assert hits(module(main_tf=text), "module-ref") == []

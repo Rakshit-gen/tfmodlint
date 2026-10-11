@@ -119,6 +119,30 @@ def provider_source(module: Module) -> Iterator[Hit]:
         )
 
 
+GIT_PREFIXES = ("git::", "git@", "github.com/", "bitbucket.org/")
+BRANCHES = frozenset({"main", "master", "develop", "dev", "trunk", "HEAD"})
+
+
+def _ref(source: str) -> str | None:
+    match = re.search(r"[?&]ref=([^&]+)", source)
+    return match.group(1) if match else None
+
+
+@rule("module-ref", ERROR, "a git module source is not pinned to a tag or commit")
+def module_ref(module: Module) -> Iterator[Hit]:
+    for block in module.of("module"):
+        source = str(block.body.get("source", ""))
+        if not source.startswith(GIT_PREFIXES):
+            continue
+        ref = _ref(source)
+        if ref is None:
+            yield at(block, f'module "{block.name}" source has no ?ref=, pin a tag or commit')
+        elif ref in BRANCHES:
+            yield at(
+                block, f'module "{block.name}" is pinned to branch "{ref}", use a tag or commit'
+            )
+
+
 def lint(module: Module, disabled: frozenset[str] = frozenset()) -> list[Finding]:
     findings = [
         Finding(name, info.level, file, line, message)
