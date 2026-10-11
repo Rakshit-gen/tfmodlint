@@ -85,6 +85,30 @@ strict = true
 `--disable` on the command line adds to `disable`, and `--strict` turns strict
 on even if the file says false.
 
+## In CI and pre-commit
+
+GitHub Actions, with problems shown as annotations on the pull request diff:
+
+```yaml
+- uses: actions/checkout@v4
+- uses: Rakshit-gen/tfmodlint@main
+  with:
+    path: modules
+    args: --strict
+```
+
+pre-commit:
+
+```yaml
+repos:
+  - repo: https://github.com/Rakshit-gen/tfmodlint
+    rev: main
+    hooks:
+      - id: tfmodlint
+```
+
+The hook lints every module in the repo whenever a `.tf` file changes.
+
 ## Rules
 
 Errors stop a module from being safe to reuse. Warnings are style and
@@ -124,8 +148,24 @@ resume), so there is one source of truth.
 
 ## Architecture
 
-_Short description or diagram link._
+```
+directory -> module.py  parse each .tf file with python-hcl2 into blocks
+                        (kind, labels, body, file, line)
+          -> rules.py   each rule looks at the whole module and yields
+                        (file, line, message); ignore comments are applied here
+          -> cli.py     config, --disable, exit codes
+          -> report.py  text, JSON or GitHub annotations
+```
+
+Rules read the parsed bodies, so text inside comments never counts as a use
+of a variable. Line numbers come from finding each block header in the
+source, since python-hcl2 does not report them.
 
 ## Status
 
-Early. Nothing works yet.
+Usable. Seventeen rules. Known limits:
+
+- Only `.tf` files are read, not `.tf.json`.
+- `interpolation-only` works line by line on the raw text, so it can also
+  match inside a heredoc.
+- Secret detection goes by variable name only.
