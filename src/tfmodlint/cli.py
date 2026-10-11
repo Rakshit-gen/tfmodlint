@@ -10,7 +10,7 @@ from tfmodlint import __version__, report
 from tfmodlint.module import ParseError, load_module
 from tfmodlint.rules import ERROR, RULES, lint
 
-FORMATS = {"text": report.text, "json": report.as_json}
+FORMATS = {"text": report.text, "json": report.as_json, "github": report.github}
 EXIT_OK, EXIT_PROBLEMS, EXIT_ERROR = 0, 1, 2
 
 

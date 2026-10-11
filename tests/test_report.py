@@ -45,3 +45,19 @@ def test_json_without_findings_is_an_empty_list():
     from tfmodlint.report import as_json
 
     assert as_json([]) == "[]\n"
+
+
+def test_github_annotations():
+    from tfmodlint.report import github
+
+    assert github(FINDINGS[:2]) == (
+        "::error file=mod/versions.tf,line=1,title=required-version::no required_version\n"
+        '::warning file=mod/variables.tf,line=4,title=variable-type::variable "a" has no type\n'
+    )
+
+
+def test_github_escapes_special_characters():
+    from tfmodlint.report import github
+
+    finding = Finding("r", "error", Path("a,b:c.tf"), 2, "50% done\nnext")
+    assert github([finding]) == "::error file=a%2Cb%3Ac.tf,line=2,title=r::50%25 done%0Anext\n"

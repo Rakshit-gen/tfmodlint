@@ -35,3 +35,20 @@ def as_json(findings: list[Finding]) -> str:
         for f in findings
     ]
     return json.dumps(rows, indent=2) + "\n"
+
+
+def _escape(value: str, prop: bool = False) -> str:
+    value = value.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+    if prop:
+        value = value.replace(":", "%3A").replace(",", "%2C")
+    return value
+
+
+def github(findings: list[Finding]) -> str:
+    """Workflow commands that GitHub Actions shows as annotations on the diff."""
+    lines = [
+        f"::{f.level} file={_escape(str(f.file), True)},line={f.line},"
+        f"title={_escape(f.rule, True)}::{_escape(f.message)}"
+        for f in findings
+    ]
+    return "".join(line + "\n" for line in lines)
