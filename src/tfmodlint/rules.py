@@ -255,6 +255,18 @@ def provider_config(module: Module) -> Iterator[Hit]:
             )
 
 
+@rule("sensitive-output", ERROR, "an output exposes a sensitive variable without sensitive = true")
+def sensitive_output(module: Module) -> Iterator[Hit]:
+    secret = {b.name for b in module.of("variable") if b.body.get("sensitive") is True}
+    for block in module.of("output"):
+        if block.body.get("sensitive") is True:
+            continue
+        for name in sorted(var_refs([block]) & secret):
+            yield at(
+                block, f'output "{block.name}" exposes sensitive var.{name}, set sensitive = true'
+            )
+
+
 IGNORE_COMMENT = re.compile(r"(?:#|//)\s*tfmodlint-ignore(?::\s*([\w,\s-]+))?")
 
 

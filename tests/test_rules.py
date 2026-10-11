@@ -258,3 +258,16 @@ def test_ignore_comment_for_another_rule_does_not_hide_the_finding():
 def test_bare_ignore_comment_hides_everything_on_the_line():
     m = module(main_tf='locals {\n  a = "${var.x}" // tfmodlint-ignore\n}\n')
     assert [r for r, _, _ in hits(m) if r in ("interpolation-only", "undeclared-variable")] == []
+
+
+def test_output_exposing_a_sensitive_variable():
+    m = module(
+        variables_tf='variable "token" {\n  sensitive = true\n}\n',
+        outputs_tf=(
+            'output "url" {\n  value = "https://x/?t=${var.token}"\n}\n\n'
+            'output "hidden" {\n  value     = var.token\n  sensitive = true\n}\n'
+        ),
+    )
+    assert hits(m, "sensitive-output") == [
+        ("sensitive-output", 1, 'output "url" exposes sensitive var.token, set sensitive = true')
+    ]
