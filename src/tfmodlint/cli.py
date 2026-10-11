@@ -8,7 +8,7 @@ from pathlib import Path
 
 from tfmodlint import __version__, report
 from tfmodlint.module import ParseError, load_module
-from tfmodlint.rules import ERROR, lint
+from tfmodlint.rules import ERROR, RULES, lint
 
 EXIT_OK, EXIT_PROBLEMS, EXIT_ERROR = 0, 1, 2
 
@@ -21,12 +21,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--strict", action="store_true", help="exit 1 on warnings too, not only on errors"
     )
+    parser.add_argument("--list-rules", action="store_true", help="print the rules and exit")
     parser.add_argument("--version", action="version", version=f"tfmodlint {__version__}")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.list_rules:
+        width = max(map(len, RULES))
+        for name, info in RULES.items():
+            print(f"{name:<{width}}  {info.level:<7}  {info.description}")
+        return EXIT_OK
     findings = []
     try:
         for raw in args.paths:

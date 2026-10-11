@@ -48,3 +48,18 @@ def test_version(capsys):
     with pytest.raises(SystemExit):
         main(["--version"])
     assert capsys.readouterr().out.startswith("tfmodlint ")
+
+
+def test_list_rules(capsys):
+    assert main(["--list-rules"]) == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[0].split() == [
+        "variable-description",
+        "warning",
+        "a",
+        "variable",
+        "has",
+        "no",
+        "description",
+    ]
+    assert any(line.startswith("module-ref ") and " error " in line for line in lines)
