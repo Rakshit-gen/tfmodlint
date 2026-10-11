@@ -143,6 +143,18 @@ def module_ref(module: Module) -> Iterator[Hit]:
             )
 
 
+# namespace/name/provider, optionally behind a registry host.
+REGISTRY_SOURCE = re.compile(r"^([\w.-]+\.[a-z]{2,}/)?[\w-]+/[\w-]+/[\w-]+$")
+
+
+@rule("module-version", ERROR, "a registry module has no version constraint")
+def module_version(module: Module) -> Iterator[Hit]:
+    for block in module.of("module"):
+        source = str(block.body.get("source", ""))
+        if REGISTRY_SOURCE.match(source) and not block.body.get("version"):
+            yield at(block, f'module "{block.name}" from the registry has no version')
+
+
 def lint(module: Module, disabled: frozenset[str] = frozenset()) -> list[Finding]:
     findings = [
         Finding(name, info.level, file, line, message)

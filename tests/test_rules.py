@@ -121,3 +121,17 @@ def test_git_module_without_ref():
 def test_ref_inside_a_subdirectory_source():
     text = 'module "x" {\n  source = "git::https://e.com/m.git//sub?depth=1&ref=abc123"\n}\n'
     assert hits(module(main_tf=text), "module-ref") == []
+
+
+def test_registry_module_without_version():
+    text = (
+        'module "vpc" {\n  source = "terraform-aws-modules/vpc/aws"\n}\n\n'
+        'module "priv" {\n  source = "app.terraform.io/acme/net/aws"\n}\n\n'
+        'module "ok" {\n  source  = "terraform-aws-modules/vpc/aws"\n  version = "5.1.0"\n}\n\n'
+        'module "local" {\n  source = "./a/b/c"\n}\n\n'
+        'module "gh" {\n  source = "github.com/org/repo?ref=v1"\n}\n'
+    )
+    assert hits(module(main_tf=text), "module-version") == [
+        ("module-version", 1, 'module "vpc" from the registry has no version'),
+        ("module-version", 5, 'module "priv" from the registry has no version'),
+    ]
