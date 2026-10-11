@@ -135,3 +135,14 @@ def test_registry_module_without_version():
         ("module-version", 1, 'module "vpc" from the registry has no version'),
         ("module-version", 5, 'module "priv" from the registry has no version'),
     ]
+
+
+def test_unused_variable():
+    m = module(
+        variables_tf=(
+            'variable "used" {}\n\nvariable "unused" {\n  validation {\n'
+            '    condition     = length(var.unused) > 0\n    error_message = "Empty."\n  }\n}\n'
+        ),
+        main_tf='# var.unused is mentioned only here\nlocals {\n  x = "${var.used}-y"\n}\n',
+    )
+    assert hits(m, "unused-variable") == [("unused-variable", 3, 'variable "unused" is never used')]

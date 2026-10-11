@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
@@ -153,6 +154,23 @@ def module_version(module: Module) -> Iterator[Hit]:
         source = str(block.body.get("source", ""))
         if REGISTRY_SOURCE.match(source) and not block.body.get("version"):
             yield at(block, f'module "{block.name}" from the registry has no version')
+
+
+VAR_REF = re.compile(r"\bvar\.([A-Za-z_][\w-]*)")
+
+
+def var_refs(blocks: list[Block]) -> set[str]:
+    # Search the parsed bodies, not the raw text, so comments do not count.
+    return {m for b in blocks for m in VAR_REF.findall(json.dumps(b.body))}
+
+
+@rule("unused-variable", WARNING, "a variable is declared but never used")
+def unused_variable(module: Module) -> Iterator[Hit]:
+    # A variable's own validation block does not count as a use.
+    used = var_refs([b for b in module.blocks if b.kind != "variable"])
+    for block in module.of("variable"):
+        if block.name not in used:
+            yield at(block, f'variable "{block.name}" is never used')
 
 
 def lint(module: Module, disabled: frozenset[str] = frozenset()) -> list[Finding]:
