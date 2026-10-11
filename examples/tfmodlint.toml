@@ -1,0 +1,9 @@
+# Copy to .tfmodlint.toml in the directory you run tfmodlint from.
+
+# Rules to skip. `tfmodlint --list-rules` prints the names.
+# Root modules usually configure providers, so a repo of root modules
+# might turn this one off.
+disable = ["provider-config"]
+
+# Exit 1 on warnings as well as errors.
+strict = false

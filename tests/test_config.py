@@ -37,3 +37,10 @@ def test_default_file_in_current_directory(tmp_path, monkeypatch):
 def test_missing_explicit_file(tmp_path):
     with pytest.raises(ConfigError, match="cannot read config"):
         load_config(str(tmp_path / "nope.toml"))
+
+
+def test_example_config_parses():
+    from pathlib import Path
+
+    example = Path(__file__).parent.parent / "examples" / "tfmodlint.toml"
+    assert parse_config(example.read_text()) == Config(disable=["provider-config"])
