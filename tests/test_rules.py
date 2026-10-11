@@ -271,3 +271,19 @@ def test_output_exposing_a_sensitive_variable():
     assert hits(m, "sensitive-output") == [
         ("sensitive-output", 1, 'output "url" exposes sensitive var.token, set sensitive = true')
     ]
+
+
+def test_interpolation_only_skips_heredocs():
+    m = module(
+        main_tf=(
+            "locals {\n"
+            "  script = <<-EOT\n"
+            '    NAME = "${var.name}"\n'
+            "  EOT\n"
+            '  b = "${var.after}"\n'
+            "}\n"
+        )
+    )
+    assert hits(m, "interpolation-only") == [
+        ("interpolation-only", 5, 'use var.after instead of "${var.after}"')
+    ]

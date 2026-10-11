@@ -166,6 +166,4 @@ source, since python-hcl2 does not report them.
 Usable. Seventeen rules. Known limits:
 
 - Only `.tf` files are read, not `.tf.json`.
-- `interpolation-only` works line by line on the raw text, so it can also
-  match inside a heredoc.
 - Secret detection goes by variable name only.

@@ -204,13 +204,22 @@ def sensitive_variable(module: Module) -> Iterator[Hit]:
 
 
 INTERPOLATION_ONLY = re.compile(r'=\s*"\$\{([^{}"]+)\}"\s*(?:#.*|//.*)?$')
+HEREDOC_START = re.compile(r"<<-?([A-Za-z_]\w*)\s*$")
 
 
 @rule("interpolation-only", WARNING, 'an expression is wrapped in "${...}" for no reason')
 def interpolation_only(module: Module) -> Iterator[Hit]:
-    # Line regex over raw text, so a match inside a heredoc is reported too.
     for file, text in module.sources.items():
+        heredoc = None
         for number, line in enumerate(text.splitlines(), 1):
+            if heredoc:
+                if line.strip() == heredoc:
+                    heredoc = None
+                continue
+            start = HEREDOC_START.search(line)
+            if start:
+                heredoc = start.group(1)
+                continue
             match = INTERPOLATION_ONLY.search(line)
             if match:
                 expr = match.group(1).strip()
