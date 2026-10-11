@@ -47,3 +47,8 @@ def test_disabled_rules_are_skipped():
 def test_variable_without_type():
     m = module(variables_tf='variable "a" {\n  description = "A."\n  default = 1\n}\n')
     assert hits(m) == [("variable-type", 1, 'variable "a" has no type')]
+
+
+def test_output_without_description():
+    m = module(outputs_tf='output "id" {\n  value = 1\n}\n')
+    assert hits(m) == [("output-description", 1, 'output "id" has no description')]
