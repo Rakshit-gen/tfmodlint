@@ -97,3 +97,24 @@ def test_recursive_lints_every_module(capsys):
 def test_recursive_with_no_modules_exits_2(tmp_path, capsys):
     (tmp_path / "docs").mkdir()
     assert main([str(tmp_path), "-r"]) == 2
+
+
+def test_config_disables_rules_and_sets_strict(tmp_path, capsys):
+    config = tmp_path / "lint.toml"
+    config.write_text(
+        'disable = ["required-version", "provider-version", "module-version",'
+        ' "undeclared-variable"]\n'
+    )
+    assert main([MESSY, "-c", str(config)]) == 0
+    config.write_text(
+        'disable = ["required-version", "provider-version", "module-version",'
+        ' "undeclared-variable"]\nstrict = true\n'
+    )
+    assert main([MESSY, "-c", str(config)]) == 1
+
+
+def test_bad_config_exits_2(tmp_path, capsys):
+    config = tmp_path / "lint.toml"
+    config.write_text("x = 1\n")
+    assert main([MESSY, "-c", str(config)]) == 2
+    assert "unknown setting: x" in capsys.readouterr().err

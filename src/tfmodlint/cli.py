@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from tfmodlint import __version__, report
+from tfmodlint.config import ConfigError, load_config
 from tfmodlint.module import ParseError, load_module, module_dirs
 from tfmodlint.rules import ERROR, RULES, lint
 
@@ -34,6 +35,12 @@ def build_parser() -> argparse.ArgumentParser:
         choices=RULES,
         help="skip a rule (repeatable)",
     )
+    parser.add_argument(
+        "-c",
+        "--config",
+        metavar="PATH",
+        help="settings file (default: .tfmodlint.toml in the current directory, if present)",
+    )
     parser.add_argument("--list-rules", action="store_true", help="print the rules and exit")
     parser.add_argument("--version", action="version", version=f"tfmodlint {__version__}")
     return parser
@@ -48,6 +55,9 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_OK
     findings = []
     try:
+        config = load_config(args.config)
+        disabled = frozenset(config.disable + args.disable)
+        strict = args.strict or config.strict
         for raw in args.paths:
             path = Path(raw)
             if not path.is_dir():
@@ -57,13 +67,13 @@ def main(argv: list[str] | None = None) -> int:
             if not modules:
                 raise ParseError(f"{raw}: no .tf files")
             for module in modules:
-                findings += lint(module, frozenset(args.disable))
-    except (OSError, ParseError) as exc:
+                findings += lint(module, disabled)
+    except (OSError, ParseError, ConfigError) as exc:
         print(f"tfmodlint: {exc}", file=sys.stderr)
         return EXIT_ERROR
 
     sys.stdout.write(FORMATS[args.format](findings))
-    if any(f.level == ERROR or args.strict for f in findings):
+    if any(f.level == ERROR or strict for f in findings):
         return EXIT_PROBLEMS
     return EXIT_OK
 
