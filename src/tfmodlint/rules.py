@@ -255,11 +255,29 @@ def provider_config(module: Module) -> Iterator[Hit]:
             )
 
 
+IGNORE_COMMENT = re.compile(r"(?:#|//)\s*tfmodlint-ignore(?::\s*([\w,\s-]+))?")
+
+
+def _ignored(module: Module, finding: Finding) -> bool:
+    """True when the finding's line, or the line above it, has a
+    `# tfmodlint-ignore` comment, optionally limited to some rules."""
+    lines = module.sources.get(finding.file, "").splitlines()
+    for number in (finding.line, finding.line - 1):
+        if 1 <= number <= len(lines):
+            match = IGNORE_COMMENT.search(lines[number - 1])
+            if match:
+                names = match.group(1)
+                if names is None or finding.rule in re.split(r"[\s,]+", names.strip()):
+                    return True
+    return False
+
+
 def lint(module: Module, disabled: frozenset[str] = frozenset()) -> list[Finding]:
     findings = [
-        Finding(name, info.level, file, line, message)
+        finding
         for name, info in RULES.items()
         if name not in disabled
         for file, line, message in info.fn(module)
+        if not _ignored(module, finding := Finding(name, info.level, file, line, message))
     ]
     return sorted(findings, key=lambda f: (str(f.file), f.line, f.rule))

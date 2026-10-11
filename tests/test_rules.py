@@ -237,3 +237,24 @@ def test_provider_configured_in_module():
     assert hits(m, "provider-config") == [
         ("provider-config", 1, 'provider "aws" is configured here, pass it in from the caller')
     ]
+
+
+def test_ignore_comment_on_the_line_above():
+    m = module(
+        variables_tf=(
+            "# tfmodlint-ignore: variable-type, unused-variable\n"
+            'variable "a" {\n  description = "A."\n}\n'
+        )
+    )
+    assert hits(m, "variable-type") == [] and hits(m, "unused-variable") == []
+    assert hits(m, "variable-description") == []
+
+
+def test_ignore_comment_for_another_rule_does_not_hide_the_finding():
+    m = module(variables_tf='variable "a" { # tfmodlint-ignore: naming\n}\n')
+    assert hits(m, "variable-type") == [("variable-type", 1, 'variable "a" has no type')]
+
+
+def test_bare_ignore_comment_hides_everything_on_the_line():
+    m = module(main_tf='locals {\n  a = "${var.x}" // tfmodlint-ignore\n}\n')
+    assert [r for r, _, _ in hits(m) if r in ("interpolation-only", "undeclared-variable")] == []
