@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from tfmodlint import __version__, report
-from tfmodlint.module import ParseError, load_module
+from tfmodlint.module import ParseError, load_module, module_dirs
 from tfmodlint.rules import ERROR, RULES, lint
 
 FORMATS = {"text": report.text, "json": report.as_json, "github": report.github}
@@ -19,6 +19,9 @@ def build_parser() -> argparse.ArgumentParser:
         prog="tfmodlint", description="Lint Terraform modules for problems that hurt reuse."
     )
     parser.add_argument("paths", nargs="*", default=["."], help="module directories (default: .)")
+    parser.add_argument(
+        "-r", "--recursive", action="store_true", help="lint every module under the paths"
+    )
     parser.add_argument("-f", "--format", choices=FORMATS, default="text")
     parser.add_argument(
         "--strict", action="store_true", help="exit 1 on warnings too, not only on errors"
@@ -49,10 +52,12 @@ def main(argv: list[str] | None = None) -> int:
             path = Path(raw)
             if not path.is_dir():
                 raise ParseError(f"{raw}: not a directory")
-            module = load_module(path)
-            if not module.sources:
+            dirs = module_dirs(path) if args.recursive else [path]
+            modules = [m for m in map(load_module, dirs) if m.sources]
+            if not modules:
                 raise ParseError(f"{raw}: no .tf files")
-            findings += lint(module, frozenset(args.disable))
+            for module in modules:
+                findings += lint(module, frozenset(args.disable))
     except (OSError, ParseError) as exc:
         print(f"tfmodlint: {exc}", file=sys.stderr)
         return EXIT_ERROR

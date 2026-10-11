@@ -85,3 +85,15 @@ def test_json_format(capsys):
     assert main([MESSY, "-f", "json"]) == 1
     rows = json.loads(capsys.readouterr().out)
     assert {r["rule"] for r in rows} >= {"required-version", "naming"}
+
+
+def test_recursive_lints_every_module(capsys):
+    assert main([str(FIXTURES), "--recursive"]) == 1
+    out = capsys.readouterr().out
+    assert "fixtures/messy/main.tf" in out
+    assert "fixtures/good/" not in out
+
+
+def test_recursive_with_no_modules_exits_2(tmp_path, capsys):
+    (tmp_path / "docs").mkdir()
+    assert main([str(tmp_path), "-r"]) == 2

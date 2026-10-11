@@ -92,3 +92,14 @@ def load_module(path: Path) -> Module:
         module.sources[file] = text
         module.blocks += parse_file(file, text)
     return module
+
+
+def module_dirs(root: Path) -> list[Path]:
+    """Every directory under root that holds .tf files, skipping .terraform
+    caches and other hidden directories."""
+    found = set()
+    for file in root.rglob("*.tf"):
+        rel = file.parent.relative_to(root)
+        if not any(part.startswith(".") for part in rel.parts):
+            found.add(file.parent)
+    return sorted(found)

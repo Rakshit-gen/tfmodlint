@@ -46,3 +46,14 @@ def test_bad_hcl_names_the_file():
 def test_module_keeps_source_text():
     module = load_module(FIXTURES / "good")
     assert "var.instance_count" in module.sources[FIXTURES / "good" / "main.tf"]
+
+
+def test_module_dirs_skips_hidden_and_cache_directories(tmp_path):
+    for rel in ["main.tf", "modules/a/main.tf", "modules/b/c/x.tf", ".terraform/modules/m/main.tf"]:
+        (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / rel).write_text("")
+    (tmp_path / "docs").mkdir()
+    from tfmodlint.module import module_dirs
+
+    found = [str(p.relative_to(tmp_path)) for p in module_dirs(tmp_path)]
+    assert found == [".", "modules/a", "modules/b/c"]
