@@ -217,6 +217,23 @@ def interpolation_only(module: Module) -> Iterator[Hit]:
                 yield file, number, f'use {expr} instead of "${{{expr}}}"'
 
 
+SNAKE_CASE = re.compile(r"^[a-z][a-z0-9_]*$")
+
+
+@rule("naming", WARNING, "a name is not lower snake_case")
+def naming(module: Module) -> Iterator[Hit]:
+    for block in module.blocks:
+        if block.kind in ("variable", "output", "module", "resource", "data"):
+            name = block.labels[-1]
+            if not SNAKE_CASE.match(name):
+                yield at(block, f'{block.kind} name "{name}" should be lower snake_case')
+        elif block.kind == "locals":
+            for name in block.body:
+                if not SNAKE_CASE.match(name):
+                    line = line_in(module, block, rf"^\s*{re.escape(name)}\s*=")
+                    yield block.file, line, f'local name "{name}" should be lower snake_case'
+
+
 def lint(module: Module, disabled: frozenset[str] = frozenset()) -> list[Finding]:
     findings = [
         Finding(name, info.level, file, line, message)

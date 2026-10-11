@@ -202,3 +202,19 @@ def test_interpolation_only():
         ("interpolation-only", 2, 'use var.name instead of "${var.name}"'),
         ("interpolation-only", 5, 'use local.x instead of "${local.x}"'),
     ]
+
+
+def test_names_must_be_snake_case():
+    m = module(
+        main_tf=(
+            'resource "aws_instance" "webServer" {}\n'
+            'variable "instance-count" {}\n'
+            'output "id" {}\n'
+            "locals {\n  okName = 1\n  fine = 2\n}\n"
+        )
+    )
+    assert hits(m, "naming") == [
+        ("naming", 1, 'resource name "webServer" should be lower snake_case'),
+        ("naming", 2, 'variable name "instance-count" should be lower snake_case'),
+        ("naming", 5, 'local name "okName" should be lower snake_case'),
+    ]
