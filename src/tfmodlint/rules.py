@@ -54,6 +54,13 @@ def variable_description(module: Module) -> Iterator[Hit]:
             yield at(block, f'variable "{block.name}" has no description')
 
 
+@rule("variable-type", WARNING, "a variable has no type constraint")
+def variable_type(module: Module) -> Iterator[Hit]:
+    for block in module.of("variable"):
+        if "type" not in block.body:
+            yield at(block, f'variable "{block.name}" has no type')
+
+
 def lint(module: Module, disabled: frozenset[str] = frozenset()) -> list[Finding]:
     findings = [
         Finding(name, info.level, file, line, message)

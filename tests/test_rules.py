@@ -39,4 +39,11 @@ def test_variable_without_description():
 
 def test_disabled_rules_are_skipped():
     m = module(variables_tf='variable "a" {}\n')
-    assert lint(m, frozenset({"variable-description"})) == []
+    assert hits(m) and not [
+        f for f in lint(m, frozenset({"variable-description"})) if f.rule == "variable-description"
+    ]
+
+
+def test_variable_without_type():
+    m = module(variables_tf='variable "a" {\n  description = "A."\n  default = 1\n}\n')
+    assert hits(m) == [("variable-type", 1, 'variable "a" has no type')]
