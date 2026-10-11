@@ -173,6 +173,15 @@ def unused_variable(module: Module) -> Iterator[Hit]:
             yield at(block, f'variable "{block.name}" is never used')
 
 
+@rule("undeclared-variable", ERROR, "var.x is used but no variable block declares it")
+def undeclared_variable(module: Module) -> Iterator[Hit]:
+    declared = {b.name for b in module.of("variable")}
+    for block in module.blocks:
+        for name in sorted(var_refs([block]) - declared):
+            line = line_in(module, block, rf"\bvar\.{re.escape(name)}\b")
+            yield block.file, line, f"var.{name} is used but not declared"
+
+
 def lint(module: Module, disabled: frozenset[str] = frozenset()) -> list[Finding]:
     findings = [
         Finding(name, info.level, file, line, message)

@@ -146,3 +146,13 @@ def test_unused_variable():
         main_tf='# var.unused is mentioned only here\nlocals {\n  x = "${var.used}-y"\n}\n',
     )
     assert hits(m, "unused-variable") == [("unused-variable", 3, 'variable "unused" is never used')]
+
+
+def test_undeclared_variable_points_at_the_use():
+    m = module(
+        variables_tf='variable "region" {}\n',
+        main_tf='resource "aws_instance" "web" {\n  ami = var.ami\n  az  = var.region\n}\n',
+    )
+    assert hits(m, "undeclared-variable") == [
+        ("undeclared-variable", 2, "var.ami is used but not declared")
+    ]
