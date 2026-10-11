@@ -22,3 +22,26 @@ def test_text_lists_findings_and_totals():
 
 def test_text_without_findings():
     assert text([]) == "No problems found.\n"
+
+
+def test_json_rows():
+    import json
+
+    from tfmodlint.report import as_json
+
+    rows = json.loads(as_json(FINDINGS[:1]))
+    assert rows == [
+        {
+            "rule": "required-version",
+            "level": "error",
+            "file": "mod/versions.tf",
+            "line": 1,
+            "message": "no required_version",
+        }
+    ]
+
+
+def test_json_without_findings_is_an_empty_list():
+    from tfmodlint.report import as_json
+
+    assert as_json([]) == "[]\n"

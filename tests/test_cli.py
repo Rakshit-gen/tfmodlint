@@ -77,3 +77,11 @@ def test_disable_rejects_unknown_rule(capsys):
     with pytest.raises(SystemExit):
         main([MESSY, "--disable", "nope"])
     assert "invalid choice: 'nope'" in capsys.readouterr().err
+
+
+def test_json_format(capsys):
+    import json
+
+    assert main([MESSY, "-f", "json"]) == 1
+    rows = json.loads(capsys.readouterr().out)
+    assert {r["rule"] for r in rows} >= {"required-version", "naming"}

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from tfmodlint.rules import ERROR, Finding
 
 
@@ -19,3 +21,17 @@ def text(findings: list[Finding]) -> str:
 
 def _plural(n: int, noun: str) -> str:
     return f"{n} {noun}" if n == 1 else f"{n} {noun}s"
+
+
+def as_json(findings: list[Finding]) -> str:
+    rows = [
+        {
+            "rule": f.rule,
+            "level": f.level,
+            "file": str(f.file),
+            "line": f.line,
+            "message": f.message,
+        }
+        for f in findings
+    ]
+    return json.dumps(rows, indent=2) + "\n"

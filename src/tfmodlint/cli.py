@@ -10,6 +10,7 @@ from tfmodlint import __version__, report
 from tfmodlint.module import ParseError, load_module
 from tfmodlint.rules import ERROR, RULES, lint
 
+FORMATS = {"text": report.text, "json": report.as_json}
 EXIT_OK, EXIT_PROBLEMS, EXIT_ERROR = 0, 1, 2
 
 
@@ -18,6 +19,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="tfmodlint", description="Lint Terraform modules for problems that hurt reuse."
     )
     parser.add_argument("paths", nargs="*", default=["."], help="module directories (default: .)")
+    parser.add_argument("-f", "--format", choices=FORMATS, default="text")
     parser.add_argument(
         "--strict", action="store_true", help="exit 1 on warnings too, not only on errors"
     )
@@ -55,7 +57,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"tfmodlint: {exc}", file=sys.stderr)
         return EXIT_ERROR
 
-    sys.stdout.write(report.text(findings))
+    sys.stdout.write(FORMATS[args.format](findings))
     if any(f.level == ERROR or args.strict for f in findings):
         return EXIT_PROBLEMS
     return EXIT_OK
