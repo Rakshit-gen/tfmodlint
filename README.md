@@ -34,6 +34,57 @@ main.tf:16: error: var.bucket is used but not declared [undeclared-variable]
 4 errors, 6 warnings.
 ```
 
+## Usage
+
+```
+tfmodlint                          # the module in the current directory
+tfmodlint -r .                     # every module below here, skipping .terraform
+tfmodlint -f json modules/vpc      # for scripts
+tfmodlint -f github -r .           # annotations in GitHub Actions
+tfmodlint --strict modules/vpc     # fail on warnings too
+tfmodlint --disable naming .
+tfmodlint --list-rules
+```
+
+Exit codes:
+
+| Code | Meaning |
+|---|---|
+| 0 | no errors (and no warnings, with `--strict`) |
+| 1 | at least one error, or a warning with `--strict` |
+| 2 | a path is missing, has no `.tf` files, or a file does not parse |
+
+## Ignoring a finding
+
+Put a comment on the line of the finding or the line above it:
+
+```hcl
+# tfmodlint-ignore: provider-config
+provider "aws" {
+  region = "us-east-1"
+}
+
+locals {
+  name = "${var.name}" // tfmodlint-ignore
+}
+```
+
+A bare `tfmodlint-ignore` hides every finding on that line. Add rule names
+after a colon to hide only those.
+
+## Config
+
+tfmodlint reads `.tfmodlint.toml` from the current directory if it exists, or
+the file passed with `--config`. See `examples/tfmodlint.toml`.
+
+```toml
+disable = ["provider-config", "file-layout"]
+strict = true
+```
+
+`--disable` on the command line adds to `disable`, and `--strict` turns strict
+on even if the file says false.
+
 ## Rules
 
 Errors stop a module from being safe to reuse. Warnings are style and
