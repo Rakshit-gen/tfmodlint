@@ -106,6 +106,19 @@ def provider_version(module: Module) -> Iterator[Hit]:
             yield block.file, line, f'provider "{name}" has no version constraint'
 
 
+@rule("provider-source", WARNING, "a required provider has no source address")
+def provider_source(module: Module) -> Iterator[Hit]:
+    for block, name, spec in required_providers(module):
+        if isinstance(spec, dict) and spec.get("source"):
+            continue
+        line = line_in(module, block, rf"^\s*{re.escape(name)}\s*=")
+        yield (
+            block.file,
+            line,
+            f'provider "{name}" has no source, add source = "<namespace>/{name}"',
+        )
+
+
 def lint(module: Module, disabled: frozenset[str] = frozenset()) -> list[Finding]:
     findings = [
         Finding(name, info.level, file, line, message)

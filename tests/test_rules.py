@@ -91,3 +91,15 @@ def test_provider_without_version():
     assert hits(module(versions_tf=VERSIONS), "provider-version") == [
         ("provider-version", 8, 'provider "random" has no version constraint')
     ]
+
+
+def test_provider_in_old_string_form_has_no_source():
+    text = 'terraform {\n  required_providers {\n    aws = "~> 5.0"\n  }\n}\n'
+    assert hits(module(versions_tf=text), "provider-source") == [
+        ("provider-source", 3, 'provider "aws" has no source, add source = "<namespace>/aws"')
+    ]
+
+
+def test_old_string_form_counts_as_a_version():
+    text = 'terraform {\n  required_providers {\n    aws = "~> 5.0"\n  }\n}\n'
+    assert hits(module(versions_tf=text), "provider-version") == []
