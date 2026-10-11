@@ -156,3 +156,16 @@ def test_undeclared_variable_points_at_the_use():
     assert hits(m, "undeclared-variable") == [
         ("undeclared-variable", 2, "var.ami is used but not declared")
     ]
+
+
+def test_secret_with_default():
+    m = module(
+        variables_tf=(
+            'variable "db_password" {\n  default = "hunter2"\n}\n\n'
+            'variable "api_token" {\n  default = null\n}\n\n'
+            'variable "region" {\n  default = "us-east-1"\n}\n'
+        )
+    )
+    assert hits(m, "secret-default") == [
+        ("secret-default", 1, 'variable "db_password" looks like a secret but has a default')
+    ]

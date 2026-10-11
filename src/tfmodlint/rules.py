@@ -182,6 +182,20 @@ def undeclared_variable(module: Module) -> Iterator[Hit]:
             yield block.file, line, f"var.{name} is used but not declared"
 
 
+SECRET_NAME = re.compile(r"(password|passwd|secret|token|api_key|private_key|credentials)", re.I)
+
+
+def secret_variables(module: Module) -> Iterator[Block]:
+    return (b for b in module.of("variable") if SECRET_NAME.search(b.name))
+
+
+@rule("secret-default", ERROR, "a variable that looks like a secret has a default value")
+def secret_default(module: Module) -> Iterator[Hit]:
+    for block in secret_variables(module):
+        if block.body.get("default") not in (None, ""):
+            yield at(block, f'variable "{block.name}" looks like a secret but has a default')
+
+
 def lint(module: Module, disabled: frozenset[str] = frozenset()) -> list[Finding]:
     findings = [
         Finding(name, info.level, file, line, message)
